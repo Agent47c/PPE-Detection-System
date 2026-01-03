@@ -427,7 +427,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- 📧 Email: support@your-domain.com
+- 📧 Email: hamza.jani7433@gmail.com
 - 🐛 Issues: [GitHub Issues](https://github.com/yourusername/ppe-safety-monitor/issues)
 - 📖 Documentation: [Wiki](https://github.com/yourusername/ppe-safety-monitor/wiki)
 
