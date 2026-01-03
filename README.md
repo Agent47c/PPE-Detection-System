@@ -1,6 +1,8 @@
+## 👥 Authors
+*   **Muhammad Imran** - *Frontend Development*
+*   **Hamza Ramzan** - *Model Training & Backend Logic*
+*   **Kashaf Ameen** - *Documentation and Reporting*
 # 🛡️ PPE Safety Monitor
-# Final Year Project
-# By Hamza Ramzan Muhammad Imran Kashaf Ameen
 
 <div align="center">
 
