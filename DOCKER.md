@@ -1,12 +1,13 @@
 # 🐳 Docker Deployment Guide
 
-Complete guide for containerizing and deploying the PPE Safety Monitor application using Docker.
+Complete guide for containerizing and deploying the PPE Safety Monitor application using Docker with GUI support.
 
 ---
 
 ## 📋 Table of Contents
 
 - [Prerequisites](#prerequisites)
+- [GUI Display Setup (Windows)](#gui-display-setup-windows)
 - [Quick Start](#quick-start)
 - [Dockerfile Configuration](#dockerfile-configuration)
 - [Docker Compose Setup](#docker-compose-setup)
@@ -21,6 +22,7 @@ Complete guide for containerizing and deploying the PPE Safety Monitor applicati
 ### Required Software
 - **Docker**: 20.10+ ([Install Docker](https://docs.docker.com/get-docker/))
 - **Docker Compose**: 2.0+ (included with Docker Desktop)
+- **VcXsrv** (Windows): For GUI display support ([Download](https://sourceforge.net/projects/vcxsrv/))
 - **NVIDIA Container Toolkit**: For GPU support ([Install Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html))
 
 ### Verify Installation
@@ -37,51 +39,136 @@ docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
 
 ---
 
+## 🖥️ GUI Display Setup (Windows)
+
+### Step 1: Install VcXsrv
+
+1. **Download VcXsrv**
+   - Download from [SourceForge](https://sourceforge.net/projects/vcxsrv/)
+   - Run the installer and follow the installation wizard
+
+2. **Launch VcXsrv (XLaunch)**
+   - Open **XLaunch** from Start Menu
+   - Configure with these settings:
+
+#### XLaunch Configuration:
+
+**Display Settings:**
+```
+○ Multiple windows
+  Display number: 0
+```
+
+**Client Startup:**
+```
+○ Start no client
+```
+
+**Extra Settings:**
+```
+☑ Clipboard
+☑ Primary Selection
+☑ Native opengl
+☑ Disable access control
+```
+
+3. **Save Configuration (Optional)**
+   - Click "Save configuration" and save as `config.xlaunch`
+   - Double-click this file to launch VcXsrv with saved settings
+
+### Step 2: Configure Windows Firewall
+
+Run this PowerShell command as Administrator:
+
+```powershell
+New-NetFirewallRule -DisplayName "VcXsrv" -Direction Inbound -Program "C:\Program Files\VcXsrv\vcxsrv.exe" -Action Allow
+```
+
+Or manually:
+1. Open **Windows Defender Firewall**
+2. Click **Allow an app through firewall**
+3. Click **Change settings** → **Allow another app**
+4. Browse to `C:\Program Files\VcXsrv\vcxsrv.exe`
+5. Add and ensure both Private and Public are checked
+
+### Step 3: Verify VcXsrv is Running
+
+Check system tray for VcXsrv icon (X server icon). If not visible, launch XLaunch again.
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Build Docker Image
+
 ```bash
-# Basic build (CPU only)
-docker build -t ppe-monitor:latest .
+# Basic build (CPU with GUI support)
+docker build -t ppe-detection-app:latest .
 
 # Build with GPU support
-docker build -t ppe-monitor:gpu --build-arg CUDA_VERSION=11.8 .
+docker build -f Dockerfile.gpu -t ppe-detection-app:gpu .
 ```
 
-### 2. Run Container
-```bash
-# CPU version
-docker run -d \
-  --name ppe-monitor \
-  -p 5000:5000 \
-  -v $(pwd)/violation_data:/app/violation_data \
-  -v $(pwd)/Recordings:/app/Recordings \
-  ppe-monitor:latest
+### 2. Run Container with Display Support
 
-# GPU version
-docker run -d \
-  --name ppe-monitor \
-  --gpus all \
+#### Windows with VcXsrv:
+
+```bash
+docker run -it --rm \
+  -e DISPLAY=host.docker.internal:0.0 \
+  -p 5000:5000 \
+  -v "%cd%/violation_data:/app/violation_data" \
+  -v "%cd%/Recordings:/app/Recordings" \
+  ppe-detection-app
+```
+
+#### Windows PowerShell:
+
+```powershell
+docker run -it --rm `
+  -e DISPLAY=host.docker.internal:0.0 `
+  -p 5000:5000 `
+  -v "${PWD}/violation_data:/app/violation_data" `
+  -v "${PWD}/Recordings:/app/Recordings" `
+  ppe-detection-app
+```
+
+#### Linux with X11:
+
+```bash
+docker run -it --rm \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
   -p 5000:5000 \
   -v $(pwd)/violation_data:/app/violation_data \
   -v $(pwd)/Recordings:/app/Recordings \
-  ppe-monitor:gpu
+  ppe-detection-app
+```
+
+#### With GPU Support:
+
+```bash
+docker run -it --rm \
+  --gpus all \
+  -e DISPLAY=host.docker.internal:0.0 \
+  -p 5000:5000 \
+  -v "%cd%/violation_data:/app/violation_data" \
+  -v "%cd%/Recordings:/app/Recordings" \
+  ppe-detection-app:gpu
 ```
 
 ### 3. Access Application
-```bash
-# Check logs
-docker logs -f ppe-monitor
 
-# Access application
-# Open browser: http://localhost:5000
+```bash
+# Application will display GUI windows via VcXsrv
+# Web interface: http://localhost:5000
 ```
 
 ---
 
 ## 📝 Dockerfile Configuration
 
-### Basic Dockerfile (CPU)
+### Basic Dockerfile (CPU with GUI Support)
 
 ```dockerfile
 FROM python:3.10-slim
@@ -89,7 +176,7 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including X11
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
@@ -97,6 +184,9 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgomp1 \
+    libx11-6 \
+    libxcb1 \
+    libxau6 \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
@@ -117,7 +207,8 @@ EXPOSE 5000
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV QT_QPA_PLATFORM=offscreen
+ENV QT_QPA_PLATFORM=xcb
+ENV QT_X11_NO_MITSHM=1
 
 # Run application
 CMD ["python", "app.py"]
@@ -128,7 +219,7 @@ CMD ["python", "app.py"]
 ```dockerfile
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
-# Install Python
+# Install Python and X11 dependencies
 RUN apt-get update && apt-get install -y \
     python3.10 \
     python3-pip \
@@ -138,6 +229,9 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgomp1 \
+    libx11-6 \
+    libxcb1 \
+    libxau6 \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
@@ -159,7 +253,8 @@ RUN mkdir -p violation_data Recordings Saved_Detections
 EXPOSE 5000
 
 ENV PYTHONUNBUFFERED=1
-ENV QT_QPA_PLATFORM=offscreen
+ENV QT_QPA_PLATFORM=xcb
+ENV QT_X11_NO_MITSHM=1
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
@@ -170,7 +265,7 @@ CMD ["python3", "app.py"]
 
 ## 🎼 Docker Compose Setup
 
-### docker-compose.yml (CPU)
+### docker-compose.yml (CPU with Display)
 
 ```yaml
 version: '3.8'
@@ -180,7 +275,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ppe-monitor
+    container_name: ppe-detection-app
+    stdin_open: true
+    tty: true
     ports:
       - "5000:5000"
     volumes:
@@ -189,26 +286,14 @@ services:
       - ./Saved_Detections:/app/Saved_Detections
       - ./models:/app/models
     environment:
+      - DISPLAY=host.docker.internal:0.0
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
       - PYTHONUNBUFFERED=1
-      - QT_QPA_PLATFORM=offscreen
+      - QT_QPA_PLATFORM=xcb
+      - QT_X11_NO_MITSHM=1
     env_file:
       - .env
-    restart: unless-stopped
-    networks:
-      - ppe-network
-
-  # Optional: IP Camera simulator
-  ipcamera-simulator:
-    build:
-      context: .
-      dockerfile: Dockerfile.ipcamera
-    container_name: ipcamera-sim
-    ports:
-      - "8080:5000"
-    volumes:
-      - ./test_videos:/app/videos
     restart: unless-stopped
     networks:
       - ppe-network
@@ -216,13 +301,9 @@ services:
 networks:
   ppe-network:
     driver: bridge
-
-volumes:
-  violation_data:
-  recordings:
 ```
 
-### docker-compose.gpu.yml (GPU Support)
+### docker-compose.gpu.yml (GPU + Display Support)
 
 ```yaml
 version: '3.8'
@@ -234,7 +315,9 @@ services:
       dockerfile: Dockerfile.gpu
       args:
         CUDA_VERSION: 11.8
-    container_name: ppe-monitor-gpu
+    container_name: ppe-detection-app-gpu
+    stdin_open: true
+    tty: true
     deploy:
       resources:
         reservations:
@@ -250,11 +333,14 @@ services:
       - ./Saved_Detections:/app/Saved_Detections
       - ./models:/app/models
     environment:
+      - DISPLAY=host.docker.internal:0.0
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - PYTHONUNBUFFERED=1
+      - QT_QPA_PLATFORM=xcb
+      - QT_X11_NO_MITSHM=1
     env_file:
       - .env
     restart: unless-stopped
@@ -267,6 +353,7 @@ networks:
 ```
 
 ### Usage
+
 ```bash
 # Start services (CPU)
 docker compose up -d
@@ -316,134 +403,47 @@ sudo systemctl restart docker
 docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
 ```
 
-### 3. Build GPU Image
-```bash
-docker build -f Dockerfile.gpu -t ppe-monitor:gpu .
-```
-
-### 4. Run with GPU
-```bash
-docker run --gpus all \
-  -p 5000:5000 \
-  -v $(pwd)/violation_data:/app/violation_data \
-  ppe-monitor:gpu
-```
-
----
-
-## 🏭 Production Deployment
-
-### Multi-Stage Build
-
-```dockerfile
-# Stage 1: Builder
-FROM python:3.10-slim as builder
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
-
-# Stage 2: Runtime
-FROM python:3.10-slim
-
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Copy dependencies from builder
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
-
-# Copy application
-COPY . .
-
-# Security: Create non-root user
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
-USER appuser
-
-EXPOSE 5000
-
-CMD ["python", "app.py"]
-```
-
-### Environment Variables
-
-Create `.env.production`:
-```env
-# Application
-APP_ENV=production
-DEBUG=false
-
-# Supabase
-SUPABASE_URL=your_production_url
-SUPABASE_KEY=your_production_key
-
-# Email
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-SENDER_EMAIL=alerts@company.com
-
-# Performance
-MAX_WORKERS=4
-FRAME_BUFFER_SIZE=5
-```
-
-### Kubernetes Deployment (Optional)
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ppe-monitor
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: ppe-monitor
-  template:
-    metadata:
-      labels:
-        app: ppe-monitor
-    spec:
-      containers:
-      - name: ppe-monitor
-        image: ppe-monitor:latest
-        ports:
-        - containerPort: 5000
-        resources:
-          limits:
-            nvidia.com/gpu: 1
-          requests:
-            memory: "4Gi"
-            cpu: "2"
-        volumeMounts:
-        - name: data
-          mountPath: /app/violation_data
-      volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: ppe-data-pvc
-```
-
 ---
 
 ## 🛠️ Troubleshooting
 
+### Display Issues
+
+#### Problem: "cannot open display: host.docker.internal:0.0"
+
+**Solution:**
+1. Ensure VcXsrv is running (check system tray)
+2. Restart VcXsrv with "Disable access control" checked
+3. Check Windows Firewall allows VcXsrv
+
+```powershell
+# Test VcXsrv connection
+docker run -it --rm -e DISPLAY=host.docker.internal:0.0 ubuntu bash
+apt-get update && apt-get install -y x11-apps
+xclock
+```
+
+#### Problem: GUI windows not appearing
+
+**Solution:**
+```bash
+# In container, test X11 connection
+echo $DISPLAY
+xdpyinfo
+
+# If fails, verify VcXsrv is running on display :0
+```
+
 ### Container Won't Start
 ```bash
 # Check logs
-docker logs ppe-monitor
+docker logs ppe-detection-app
 
 # Inspect container
-docker inspect ppe-monitor
+docker inspect ppe-detection-app
 
 # Enter container shell
-docker exec -it ppe-monitor /bin/bash
+docker exec -it ppe-detection-app /bin/bash
 ```
 
 ### GPU Not Detected
@@ -471,7 +471,7 @@ cat /etc/docker/daemon.json
 lsof -i :5000
 
 # Change port mapping
-docker run -p 5001:5000 ppe-monitor
+docker run -p 5001:5000 ppe-detection-app
 ```
 
 ### Volume Permissions
@@ -480,92 +480,112 @@ docker run -p 5001:5000 ppe-monitor
 sudo chown -R $(id -u):$(id -g) ./violation_data
 
 # Or run container as current user
-docker run --user $(id -u):$(id -g) ppe-monitor
+docker run --user $(id -u):$(id -g) ppe-detection-app
 ```
 
-### Memory Issues
+---
+
+## 📝 Quick Reference Commands
+
+### Windows Command Prompt
+```cmd
+REM Build image
+docker build -t ppe-detection-app .
+
+REM Run with display
+docker run -it --rm -e DISPLAY=host.docker.internal:0.0 -p 5000:5000 -v "%cd%/violation_data:/app/violation_data" -v "%cd%/Recordings:/app/Recordings" ppe-detection-app
+
+REM Run with GPU
+docker run -it --rm --gpus all -e DISPLAY=host.docker.internal:0.0 -p 5000:5000 -v "%cd%/violation_data:/app/violation_data" -v "%cd%/Recordings:/app/Recordings" ppe-detection-app:gpu
+```
+
+### Windows PowerShell
+```powershell
+# Build image
+docker build -t ppe-detection-app .
+
+# Run with display
+docker run -it --rm `
+  -e DISPLAY=host.docker.internal:0.0 `
+  -p 5000:5000 `
+  -v "${PWD}/violation_data:/app/violation_data" `
+  -v "${PWD}/Recordings:/app/Recordings" `
+  ppe-detection-app
+
+# Run with GPU
+docker run -it --rm `
+  --gpus all `
+  -e DISPLAY=host.docker.internal:0.0 `
+  -p 5000:5000 `
+  -v "${PWD}/violation_data:/app/violation_data" `
+  -v "${PWD}/Recordings:/app/Recordings" `
+  ppe-detection-app:gpu
+```
+
+### Linux Bash
 ```bash
-# Increase Docker memory limit
-# Docker Desktop: Settings > Resources > Memory
+# Build image
+docker build -t ppe-detection-app .
 
-# Check container memory usage
-docker stats ppe-monitor
+# Run with display
+docker run -it --rm \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -p 5000:5000 \
+  -v $(pwd)/violation_data:/app/violation_data \
+  -v $(pwd)/Recordings:/app/Recordings \
+  ppe-detection-app
 
-# Limit container memory
-docker run -m 4g ppe-monitor
+# Run with GPU
+docker run -it --rm \
+  --gpus all \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -p 5000:5000 \
+  -v $(pwd)/violation_data:/app/violation_data \
+  -v $(pwd)/Recordings:/app/Recordings \
+  ppe-detection-app:gpu
 ```
 
 ---
 
-## 📊 Monitoring & Logging
+## 🎯 VcXsrv Startup Script
 
-### Health Checks
+Create `start-vcxsrv.bat` for easy VcXsrv startup:
 
-```dockerfile
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:5000/health')"
+```batch
+@echo off
+echo Starting VcXsrv X Server...
+start "" "C:\Program Files\VcXsrv\vcxsrv.exe" :0 -ac -terminate -lesspointer -multiwindow -clipboard -wgl -dpi auto
+
+echo Waiting for X Server to start...
+timeout /t 3 /nobreak > nul
+
+echo VcXsrv started successfully!
+echo You can now run Docker containers with GUI support.
+pause
 ```
 
-### Logging Configuration
+Or PowerShell version `start-vcxsrv.ps1`:
 
-```yaml
-services:
-  ppe-monitor:
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+```powershell
+Write-Host "Starting VcXsrv X Server..." -ForegroundColor Green
+Start-Process "C:\Program Files\VcXsrv\vcxsrv.exe" -ArgumentList ":0", "-ac", "-terminate", "-lesspointer", "-multiwindow", "-clipboard", "-wgl", "-dpi", "auto"
+
+Start-Sleep -Seconds 3
+Write-Host "VcXsrv started successfully!" -ForegroundColor Green
+Write-Host "You can now run Docker containers with GUI support." -ForegroundColor Cyan
 ```
-
-### Monitoring with Prometheus (Optional)
-
-```yaml
-services:
-  prometheus:
-    image: prom/prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-```
-
----
-
-## 🔐 Security Best Practices
-
-1. **Don't include .env in image**
-   ```dockerfile
-   # Add to .dockerignore
-   .env
-   .env.local
-   *.key
-   *.pem
-   ```
-
-2. **Use secrets management**
-   ```bash
-   docker secret create supabase_url supabase_url.txt
-   docker secret create supabase_key supabase_key.txt
-   ```
-
-3. **Scan images for vulnerabilities**
-   ```bash
-   docker scan ppe-monitor:latest
-   ```
-
-4. **Use multi-stage builds** (shown above)
-
-5. **Run as non-root user** (shown above)
 
 ---
 
 ## 📚 Additional Resources
 
 - [Docker Documentation](https://docs.docker.com/)
+- [VcXsrv Documentation](https://sourceforge.net/projects/vcxsrv/)
 - [Docker Compose Reference](https://docs.docker.com/compose/compose-file/)
 - [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-docker)
-- [Best Practices for Writing Dockerfiles](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+- [X11 Forwarding Guide](https://wiki.archlinux.org/title/OpenSSH#X11_forwarding)
 
 ---
 

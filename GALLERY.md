@@ -9,6 +9,22 @@ A visual tour of the PPE Safety Monitor application.
 <table>
   <tr>
     <td width="50%">
+      <img src="screenshots/login_screen.png" alt="Login Screen"/>
+      <br/>
+      <b>Login In App</b>
+      <br/>
+      <i>Enter Your Register Email And password</i>
+    </td>
+    <td width="50%">
+      <img src="screenshots/signup_screen.png" alt="Detection Mode"/>
+      <br/>
+      <b>Register In App</b>
+      <br/>
+      <i>Enter Your Email And password And Confirm It And Check Your Mail For Verification</i>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
       <img src="screenshots/connection_screen.png" alt="Connection Screen"/>
       <br/>
       <b>Connection Setup</b>

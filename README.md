@@ -34,6 +34,17 @@ PPE Safety Monitor is an advanced computer vision application designed for workp
 
 ## 📸 Screenshots
 
+### Login Screen
+Enter Register Email And Password OR Create Register New Account
+
+<div align="center">
+  <img src="screenshots/login_screen.png" alt="Login Screen" width="800"/>
+  <p><i>Enter Your Login Details To Access The App</i></p>
+</div>
+
+---
+
+---
 ### Connection Screen
 Select your video source and configure detection settings.
 
