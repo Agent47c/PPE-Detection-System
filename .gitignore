@@ -1,0 +1,8 @@
+ppe/
+__pycache__/
+*.pyc
+*.mp4
+*.pt
+*.pth
+.vscode/
+recording_*.avi
