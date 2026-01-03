@@ -1,5 +1,6 @@
 # 🛡️ PPE Safety Monitor
-# By Hamza Ramzan Muhammad Imran kashaf Ameen
+# Final Year Project
+# By Hamza Ramzan Muhammad Imran Kashaf Ameen
 
 <div align="center">
 
