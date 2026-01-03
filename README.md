@@ -43,8 +43,6 @@ Enter Register Email And Password OR Create Register New Account
 </div>
 
 ---
-
----
 ### Connection Screen
 Select your video source and configure detection settings.
 
