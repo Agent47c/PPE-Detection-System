@@ -169,10 +169,10 @@ If you create demo videos, embed them here:
 
 ```markdown
 ### Quick Start Guide
-[![Quick Start](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)
+[![Quick Start](screenshots/Thumbnail.jpg)](https://www.youtube.com/watch?v=AlRjiE3LIQQ)
 
-### Violation Detection Demo
-[![Violation Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)
+▶️ Click the image to watch the full PPE Monitoring System demo on YouTube.
+
 ```
 
 ---
