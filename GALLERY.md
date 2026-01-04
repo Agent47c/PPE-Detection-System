@@ -165,13 +165,9 @@ A visual tour of the PPE Safety Monitor application.
 
 ## 🎥 Demo Videos (Optional)
 
-If you create demo videos, embed them here:
+[![Watch the video](https://img.youtube.com/vi/AlRjiE3LIQQ/maxresdefault.jpg)](https://youtu.be/AlRjiE3LIQQ)
 
-```markdown
-### Quick Start Guide
-[![Quick Start](screenshots/Thumbnail.jpg)](https://www.youtube.com/watch?v=AlRjiE3LIQQ)
-
-▶️ Click the image to watch the full PPE Monitoring System demo on YouTube.
+### [Watch this video on YouTube](https://youtu.be/AlRjiE3LIQQ)
 
 ```
 
@@ -235,6 +231,6 @@ If you create demo videos, embed them here:
 
 ---
 
-**Questions?** Open an [issue](https://github.com/yourusername/ppe-safety-monitor/issues) or check the [Wiki](https://github.com/yourusername/ppe-safety-monitor/wiki)
+**Questions?** Open an [issue](https://github.com/yourusername/ppe-safety-monitor/issues)
 
 </div>
