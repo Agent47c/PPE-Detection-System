@@ -163,13 +163,12 @@ A visual tour of the PPE Safety Monitor application.
 
 ---
 
-## 🎥 Demo Videos (Optional)
+## 🎥 Demo Video
 
 [![Watch the video](https://img.youtube.com/vi/AlRjiE3LIQQ/maxresdefault.jpg)](https://youtu.be/AlRjiE3LIQQ)
 
 ### [Watch this video on YouTube](https://youtu.be/AlRjiE3LIQQ)
 
-```
 
 ---
 

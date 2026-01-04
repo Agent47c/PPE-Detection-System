@@ -146,6 +146,11 @@ All-in-one monitoring with detection, tracking, and violation alerts.
 </div>
 
 ---
+## 🎥 Demo Video
+
+[![Watch the video](https://img.youtube.com/vi/AlRjiE3LIQQ/maxresdefault.jpg)](https://youtu.be/AlRjiE3LIQQ)
+
+### [Watch this video on YouTube](https://youtu.be/AlRjiE3LIQQ)
 
 ## ✨ Features
 
