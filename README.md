@@ -320,7 +320,20 @@ python app.py
 
 See [DOCKER.md](DOCKER.md) for detailed Docker setup instructions.
 
-Quick start:
+
+#### Using Helper Scripts (Automaticlly Run The Scripts After Setting Up)
+
+**Windows:**
+```powershell
+.\run-docker.ps1
+```
+
+**Linux/Mac:**
+```bash
+chmod +x run-docker.sh
+./run-docker.sh
+```
+#### Quick start:
 ```bash
 docker build -t ppe-safety-monitor .
 docker run -it --rm -e DISPLAY=host.docker.internal:0.0 ppe-safety-monitor

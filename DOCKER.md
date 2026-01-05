@@ -98,7 +98,19 @@ Check system tray for VcXsrv icon (X server icon). If not visible, launch XLaunc
 ---
 
 ## 🚀 Quick Start
+### Using Helper Scripts (Automaticlly Run The Scripts After Setting Up)
 
+**Windows:**
+```powershell
+.\run-docker.ps1
+```
+
+**Linux/Mac:**
+```bash
+chmod +x run-docker.sh
+./run-docker.sh
+```
+## Manual Setting Up Docker
 ### 1. Build Docker Image
 
 ```bash
